@@ -19,8 +19,10 @@ export const getMemeByCategory = async (
   res: Response
 ): Promise<void> => {
   const id = req.params.id;
+
   try {
-    const memes = await MemeModel.find({ memes: id }).lean().exec();
+    const memes = await MemeModel.find({ categories: id }).lean().exec();
+
     res.status(200).send({ status: true, data: memes });
   } catch (error) {
     res.status(500).send({ status: false, message: (error as Error).message });

@@ -14,6 +14,17 @@ const MemeSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "Category",
   },
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
+  },
+  likedBy: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
   likeCount: {
     type: Number,
     default: 0,

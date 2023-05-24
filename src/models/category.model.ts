@@ -7,6 +7,9 @@ const CategorySchema = new Schema({
   description: {
     type: String,
   },
+  image: {
+    type: String,
+  },
 });
 const CategoryModel = model("Category", CategorySchema);
 export default CategoryModel;

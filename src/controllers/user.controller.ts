@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import fs from "fs-extra";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { uploadImage } from "../utils/cloudinary";
 import UserModel from "../models/user.model";
 import RolModel from "../models/rol.model";
@@ -18,25 +19,13 @@ export const getAllUsers = async (
   }
 };
 
-export const getUserById = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  const id = req.params.id;
-  try {
-    const user = await UserModel.findById(id).lean().exec();
-    res.status(200).send({ status: true, data: user });
-  } catch (error) {
-    res.status(500).send({ status: false, message: (error as Error).message });
-  }
-};
-
-export const createUser = async (
+export const registerUser = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   const { name, lastName, userName, email, password, rol } = req.body;
   const { thumbnail }: any = req.files;
+
   try {
     if (!req.files?.thumbnail) {
       throw new Error("Thumbnail is required");
@@ -47,7 +36,7 @@ export const createUser = async (
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(password, salt);
 
-    const rolUser = await RolModel.find({ name: rol });
+    const rolUser = await RolModel.find({ name: "User" });
 
     const newUser = await UserModel.create({
       name,
@@ -65,12 +54,52 @@ export const createUser = async (
   }
 };
 
+export const loginUser = async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      return res.status(400).send("Invalid email or password");
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user!.password);
+    if (!isPasswordValid) {
+      return res.status(400).send("Invalid email or password");
+    }
+    const token = jwt.sign({ userId: user!._id }, "secret_key");
+    res.status(200).send({
+      status: true,
+      token,
+      rol: user.rol,
+      id: user._id,
+    });
+  } catch (error) {
+    res.status(500).send({ message: (error as Error).message });
+  }
+};
+
+export const getUserById = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const id = req.params.id;
+
+  try {
+    const user = await UserModel.findById(id).lean().exec();
+
+    res.status(200).send({ status: true, data: user });
+  } catch (error) {
+    res.status(500).send({ status: false, message: (error as Error).message });
+  }
+};
+
 export const updateUser = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { name, lastName, userName, password } = req.body;
   const { id } = req.params;
+  const { name, lastName, userName, password } = req.body;
   const { thumbnail }: any = req.files;
   try {
     if (!req.files?.thumbnail) {
@@ -119,16 +148,29 @@ export const likeMemeUser = async (
 ): Promise<void> => {
   const id = req.params.id;
   const memeId = req.body.memeId;
+
   try {
     const addMeme = await UserModel.findByIdAndUpdate(id, {
       $push: { likedMemes: memeId },
     })
       .lean()
       .exec();
-    const countMeme = await MemeModel.findByIdAndUpdate(memeId, {
-      $inc: { likeCount: 1 },
+
+    const likedbyUser = await MemeModel.findByIdAndUpdate(memeId, {
+      $push: { likedBy: id },
     });
-    res.status(200).send({ status: true, addMeme, countMeme });
+    const countMeme = await MemeModel.findByIdAndUpdate(
+      memeId,
+      {
+        $inc: { likeCount: 1 },
+      },
+      { new: true }
+    )
+      .lean()
+      .exec();
+
+    console.log("respuesta");
+    res.status(200).send({ status: true, addMeme, countMeme, likedbyUser });
   } catch (error) {
     res.status(400).send(error);
   }
@@ -146,10 +188,27 @@ export const dislikeMemeUser = async (
     })
       .lean()
       .exec();
+
+    const likedbyUser = await MemeModel.findByIdAndUpdate(memeId, {
+      $pull: { likedBy: id },
+    });
+
     const countMeme = await MemeModel.findByIdAndUpdate(memeId, {
       $inc: { likeCount: -1 },
     });
-    res.status(200).send({ status: true, quitMeme, countMeme });
+
+    res.status(200).send({ status: true, quitMeme, countMeme, likedbyUser });
+  } catch (error) {
+    res.status(400).send(error);
+  }
+};
+
+export const getLikedMemes = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  console.log("id del usuario:", id);
+  try {
+    const user = await UserModel.findById(id).populate("likedMemes");
+    res.status(200).send({ data: user?.likedMemes });
   } catch (error) {
     res.status(400).send(error);
   }

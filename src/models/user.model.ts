@@ -1,13 +1,11 @@
 import { Schema, model } from "mongoose";
 
-// Configuración de los campos de la coleccion/tabla de usuarios.
-
 const UserSchema = new Schema({
   name: {
     type: String,
     required: [true, "First name is required"],
   },
-  lastName: {
+  lastame: {
     type: String,
     required: false,
   },

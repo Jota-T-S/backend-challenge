@@ -27,6 +27,8 @@ export const uploadMemes = async (
   return await cloudinary.uploader.upload(filePath, {
     resource_type: "auto",
     folder: "Memes",
+    height: 300,
+    width: 300,
     overwrite: true,
   });
 };

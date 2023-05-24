@@ -20,7 +20,7 @@ export interface ConfigOptions {
   cloudinary: CloudinaryConfig;
   jwt: JwtConfig;
 }
-//[key:string] Indice que puede ser cualquier cadena de texto. Se puede acceder a propiedades adicionales en el objeto "Config" utilizando claves de cadena que no están definidas explícitamente en la interfaz.
+
 export interface Config {
   [key: string]: ConfigOptions;
 }
