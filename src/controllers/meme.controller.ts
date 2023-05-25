@@ -107,7 +107,7 @@ export const getMemesByUser = async (
 ): Promise<void> => {
   const { id } = req.params;
   try {
-    const memes = await MemeModel.find({ user: id }).lean().exec();
+    const memes = await MemeModel.find({ userId: id }).lean().exec();
     res.status(200).send({ status: true, data: memes });
   } catch (error) {
     res.status(500).send({ status: false, message: (error as Error).message });

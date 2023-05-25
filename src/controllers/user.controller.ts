@@ -205,7 +205,6 @@ export const dislikeMemeUser = async (
 
 export const getLikedMemes = async (req: Request, res: Response) => {
   const { id } = req.params;
-  console.log("id del usuario:", id);
   try {
     const user = await UserModel.findById(id).populate("likedMemes");
     res.status(200).send({ data: user?.likedMemes });
